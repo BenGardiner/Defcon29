@@ -449,6 +449,7 @@ int main(void)
 					else {
 						led_set_color(4, LED_COLOR_BLUE);
 					}
+					mute_on = !mute_on;
 					send_keys(4);
 				}
 			
