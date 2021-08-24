@@ -64,6 +64,8 @@ enum status_code eepromstatus;
  * Variables
  */
 
+bool mute_on = false;
+
 uint32_t serialnum[4];
 
 bool USBPower = false;
@@ -441,6 +443,12 @@ int main(void)
 				if(button4){
 					button4 = false;
 					//if(main_b_kbd_enable) send_keys(4);
+					if(mute_on){
+						led_set_color(4, LED_COLOR_RED);
+					}
+					else {
+						led_set_color(4, LED_COLOR_BLUE);
+					}
 					send_keys(4);
 				}
 			

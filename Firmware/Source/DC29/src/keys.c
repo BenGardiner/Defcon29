@@ -48,6 +48,35 @@ void get_keymap(void){
 
 void send_keys(uint8_t key){
 	if(key < 6){
+		if(key == 4){
+			wait_for_sof = true;
+			udi_hid_kbd_modifier_down(HID_MODIFIER_LEFT_UI);
+			lastUSBSendTime = millis;
+			while(millis - lastUSBSendTime < 10);
+			wait_for_sof = true;
+			udi_hid_kbd_modifier_down(HID_MODIFIER_LEFT_SHIFT);
+			lastUSBSendTime = millis;
+			while(millis - lastUSBSendTime < 10);
+			wait_for_sof = true;
+			//udi_hid_kbd_down(ascii_to_hid['m']);
+			udi_hid_kbd_down(HID_M);
+			lastUSBSendTime = millis;
+			while(millis - lastUSBSendTime < 10);
+			wait_for_sof = true;
+			//udi_hid_kbd_up(ascii_to_hid['m']);
+			udi_hid_kbd_up(HID_M);
+			lastUSBSendTime = millis;
+			while(millis - lastUSBSendTime < 10);
+			wait_for_sof = true;
+			udi_hid_kbd_modifier_up(HID_MODIFIER_LEFT_UI);
+			lastUSBSendTime = millis;
+			while(millis - lastUSBSendTime < 10);
+			wait_for_sof = true;
+			udi_hid_kbd_modifier_up(HID_MODIFIER_LEFT_SHIFT);
+			lastUSBSendTime = millis;
+			while(millis - lastUSBSendTime < 10);
+			wait_for_sof = true;
+		} else
 		for(int x=keymapstarts[key-1]+1; x<keymapstarts[key]; x+=2){
 			if(keymap[x] == 240){ //Media key
 				wait_for_sof = true; //Needed?? I think the code that tests for this is gone
