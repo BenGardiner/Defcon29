@@ -11,6 +11,11 @@ NOTE: Flashing new firmware should not reset your challenge/game stats. They are
 
 To generate your own .uf2 files, take the compiled .hex file and use the UF2 converter uf2conv.py available from https://github.com/microsoft/uf2/ (in the utils directory).
 
+rather, from repo root:
+```
+python3 utils/uf2conv.py Firmware/Source/DC29/Debug/KEYBOARD_EXAMPLE1.hex -o HACKED_BADGE.uf2
+```
+
 I wrote the code in ~~Atmel~~Microchip Studio 7.0 and used the ASF Framework. The install files for the version I used is available on the DEF CON Media Server
 https://media.defcon.org/DEF%20CON%2029/DEF%20CON%2029%20badge/
 
