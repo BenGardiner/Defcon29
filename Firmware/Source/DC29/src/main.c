@@ -183,6 +183,22 @@ void vbus_handler(void){
 	}
 }
 
+uint32_t led_clock = 0;
+
+uint8_t clipped_sawtooth(uint32_t i)
+{
+	int wrapped_i = i % 1024;
+	
+	if (wrapped_i < 256) {
+		return 255;
+	} else if (wrapped_i < 512) {
+		return 511 - wrapped_i;
+	} else if (wrapped_i <= 768) {
+		return 0;
+	}
+	return wrapped_i - 769;
+}
+
 /*! \brief Main function. Execution starts here.
  */
 int main(void)
@@ -355,8 +371,6 @@ int main(void)
 	
 	GCLK->GENCTRL.bit.RUNSTDBY = 1;  //GCLK run standby
 	
-	touch_sensors_init();
-	
 	pwm_init();
 	
 	//Startup LED Sequence
@@ -400,90 +414,61 @@ int main(void)
 	led_off(LED3B);
 	delay_cycles_ms(delaytime);
 	led_off(LED4B);
-	
-	if(!port_pin_get_input_level(BUTTON1)){
-		gamemode = SIMON_SOLO;
-		led_set_color(1,LED_COLOR_OFF);
-		led_set_color(2,LED_COLOR_OFF);
-		led_set_color(3,LED_COLOR_OFF);
-		led_set_color(4,LED_COLOR_OFF);
-		while(port_pin_get_input_level(BUTTON1) == false);
-		button1 = false;
-	}
 
 	uart_event = millis;
 	
-	led_set_color(1,led1color);
-	led_set_color(2,led2color);
-	led_set_color(3,led3color);
-	led_set_color(4,led4color);
+	led_set_color(1,LED_COLOR_RED);
+	led_set_color(2,LED_COLOR_RED);
+	led_set_color(3,LED_COLOR_RED);
+	led_set_color(4,LED_COLOR_RED);
 
 	
 	while(1){
-		//Check Buttons
-		if(gamemode == IDLE){ //Game modes check the buttons themselves
-			if(USBPower && ((millis - last_usb_comms) < 100)){ //Only send keys when connected to a computer
-				if(button1){
-					button1 = false;
-					//if(main_b_kbd_enable) send_keys(1);
-					send_keys(1);
-				}
-				if(button2){
-					button2 = false;
-					//if(main_b_kbd_enable) send_keys(2);
-					send_keys(2);
-				}
-				if(button3){
-					button3 = false;
-					//if(main_b_kbd_enable) send_keys(3);
-					send_keys(3);
-				}
-				if(button4){
-					button4 = false;
-					//if(main_b_kbd_enable) send_keys(4);
-					send_keys(4);
-				}
-			
-				//Check Touch Sensors
-				touch_sensors_measure();
-				if (p_selfcap_measure_data->measurement_done_touch == 1u) {
-
-					p_selfcap_measure_data->measurement_done_touch = 0u;
-					slider_state = GET_SELFCAP_SENSOR_STATE(0);
-					if(slider_state)
-					{
-						slider_position = GET_SELFCAP_ROTOR_SLIDER_POSITION(0);
-						if(slider_position > last_slider_position + 10){
-							last_slider_position = slider_position;
-							send_keys(6);//sliding down
-						}
-						if(slider_position < last_slider_position - 10){
-							last_slider_position = slider_position;
-							send_keys(5);//sliding up
-						}
-					}
-				}
-			}
+		if(button1){
+			button1 = false;
+			led_clock += 512;
+			//if(main_b_kbd_enable) send_keys(1);
+			send_keys(1);
+		}
+		if(button2){
+			button2 = false;
+			led_clock += 512;
+			//if(main_b_kbd_enable) send_keys(2);
+			send_keys(2);
+		}
+		if(button3){
+			button3 = false;
+			led_clock += 512;
+			//if(main_b_kbd_enable) send_keys(3);
+			send_keys(3);
+		}
+		if(button4){
+			button4 = false;
+			led_clock += 512;
+			//if(main_b_kbd_enable) send_keys(4);
+			send_keys(4);
 		}
 		
-		//Update USB serial console if we got data
-		if(main_b_cdc_enable){
-			if(udi_cdc_get_nb_received_data()){
-				updateSerialConsole();
-			}
-		}
+		uint8_t i1 = clipped_sawtooth(led_clock);
+		uint8_t q1 = clipped_sawtooth(led_clock + 512);
 		
-		//Go to sleep to save battery
-		//if (!USBPower && ((uart_event + 1000) < millis)) {
-		if (!USBPower && ((millis - uart_event) > 1000) && gamemode != SIMON_SOLO) {
-			standby_sleep();
-		}
+		uint8_t i2 = clipped_sawtooth(led_clock + 256);
+		uint8_t q2 = clipped_sawtooth(led_clock + 256 + 512);
 		
+		uint8_t i3 = clipped_sawtooth(led_clock + 512);
+		uint8_t q3 = clipped_sawtooth(led_clock + 512 + 512);
 		
-		//Check serial ports
-		check_comms();
+		uint8_t i4 = clipped_sawtooth(led_clock + 768);
+		uint8_t q4 = clipped_sawtooth(led_clock + 768 + 512);				
 		
-		run_games();
+		led_set_brightness(LED1B, i4);
+		led_set_brightness(LED1R, q4);
+		led_set_brightness(LED2B, i3);
+		led_set_brightness(LED2R, q3);
+		led_set_brightness(LED4B, i2);
+		led_set_brightness(LED4R, q2);
+		led_set_brightness(LED3B, i1);
+		led_set_brightness(LED3R, q1);
 		
 		play_sounds();
 	}
@@ -552,12 +537,17 @@ void main_kbd_disable(void)
 	main_b_kbd_enable = false;
 }
 
-/*! \brief Configure the RTC timer overflow callback
- *
- */
+uint16_t led_div = 16;
 void rtc_overflow_callback(void)
 {
 	millis ++;
+	if (millis % led_div == 0) {
+		led_clock++;
+	}
+	
+	if (millis % 3000 == 0) {
+		led_div = rand() % 31 + 1;
+	}
 	
 	/* Do something on RTC overflow here */
 	if(touch_time_counter == touch_time.measurement_period_ms)
@@ -570,42 +560,6 @@ void rtc_overflow_callback(void)
 	else
 	{
 		touch_time_counter++;
-	}
-	
-	if(gamemode == SIMON_SOLO || gamemode == SIMON_MULTI_PRIMARY || gamemode == SIMON_MULTI_SECONDARY){
-		if(!port_pin_get_input_level(BUTTON1)){
-			tcc_restart_counter(&tcc2_instance);
-			tcc_set_compare_value(&tcc2_instance,0,219); //415Hz
-			
-			led_set_color(1,LED_COLOR_GREEN);
-		}
-		if(!port_pin_get_input_level(BUTTON2)){
-			tcc_restart_counter(&tcc2_instance);
-			tcc_set_compare_value(&tcc2_instance,0,293); //310Hz
-			
-			led_set_color(2,LED_COLOR_RED);
-		}
-		if(!port_pin_get_input_level(BUTTON3)){
-			tcc_restart_counter(&tcc2_instance);
-			tcc_set_compare_value(&tcc2_instance,0,360); //252Hz
-			
-			led_set_color(3,LED_COLOR_YELLOW);
-		}
-		if(!port_pin_get_input_level(BUTTON4)){
-			tcc_restart_counter(&tcc2_instance);
-			tcc_set_compare_value(&tcc2_instance,0,435); //209Hz
-			
-			led_set_color(4,LED_COLOR_BLUE);
-		}
-	
-		if(port_pin_get_input_level(BUTTON1) & port_pin_get_input_level(BUTTON2) & port_pin_get_input_level(BUTTON3) & port_pin_get_input_level(BUTTON4) & games_buzzer_off){
-			//tcc_set_compare_value(&tcc2_instance,0,0); //off
-			tcc_stop_counter(&tcc2_instance);
-			led_set_color(1,LED_COLOR_OFF);
-			led_set_color(2,LED_COLOR_OFF);
-			led_set_color(3,LED_COLOR_OFF);
-			led_set_color(4,LED_COLOR_OFF);
-		}
 	}
 }
 
@@ -659,7 +613,6 @@ void button1_handler(void){
 		if((millis - lastButton1Press) > DEBOUNCE_TIME){
 			lastButton1Press = millis;
 			button1 = true;
-			uart_event = millis;
 		}
 	}
 }

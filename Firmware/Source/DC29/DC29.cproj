@@ -329,7 +329,7 @@
         <documentation help="https://asf.microchip.com/docs/3.49.1/common.services.usb.class.hid.device.keyboard.example.samd21_xpro/html/index.html" />
         <offline-documentation help="" />
         <dependencies>
-          <content-extension eid="atmel.asf" uuidref="Atmel.ASF" version="3.49.1" />
+          <content-extension eid="atmel.asf" uuidref="Atmel.ASF" version="3.34.1" />
         </dependencies>
         <project id="common.services.usb.class.hid.device.keyboard.example.samd21_xpro" value="Add" config="" content-id="Atmel.ASF" />
         <board id="board.samd21_xplained_pro" value="Add" config="" content-id="Atmel.ASF" />

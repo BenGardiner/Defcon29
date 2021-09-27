@@ -6,6 +6,7 @@
 
 #include "keys.h"
 #include "udi_hid_kbd.h"
+#include "string.h"
 
 extern uint8_t keymap[231];
 extern uint8_t keymaplength;
@@ -20,7 +21,8 @@ extern bool udi_hid_kbd_b_report_trans_ongoing;
 uint32_t lastUSBSendTime = 0;
 
 void get_keymap(void){
-	rww_eeprom_emulator_read_buffer(EEP_KEY_MAP, keymap, 231);
+	//rww_eeprom_emulator_read_buffer(EEP_KEY_MAP, keymap, 231);
+	memcpy(keymap, default_keymap, sizeof(default_keymap));
 
 	keymaplength = keymap[0];
 	keymapstarts[0] = 1;

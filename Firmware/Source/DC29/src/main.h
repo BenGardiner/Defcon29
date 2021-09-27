@@ -158,10 +158,10 @@ typedef struct {
 
 static const uint8_t default_keymap[21] = { 
 	21, //length
-	250,3,16, //key1 - ctrl-shift-m
-	251,240,32, //key2 - Mute
-	252,2,51,2,39, //key3 - :)
-	253,240,16, //key4 - Play/Pause
+	250,240,HID_MEDIA_BACK, //key1
+	251,240,HID_MEDIA_NEXT, //key2
+	252,240,HID_MEDIA_MUTE, //key3
+	253,240,HID_MEDIA_PLAY, //key4
 	254,240,64,255,240,128 //slider Vol+/-
 };
 /*! \brief Called by HID interface
