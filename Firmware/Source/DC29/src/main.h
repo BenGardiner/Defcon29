@@ -162,7 +162,8 @@ static const uint8_t default_keymap[21] = {
 	251,240,HID_MEDIA_NEXT, //key2
 	252,240,HID_MEDIA_MUTE, //key3
 	253,240,HID_MEDIA_PLAY, //key4
-	254,240,64,255,240,128 //slider Vol+/-
+	254,240,HID_MEDIA_VOL_MINUS, //key5
+	255,240,HID_MEDIA_VOL_PLUS  //key6
 };
 /*! \brief Called by HID interface
  * Callback running when USB Host enable keyboard interface

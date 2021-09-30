@@ -199,6 +199,9 @@ uint8_t clipped_sawtooth(uint32_t i)
 	return wrapped_i - 769;
 }
 
+bool button3_held = false;
+bool button3_combo = false;
+
 /*! \brief Main function. Execution starts here.
  */
 int main(void)
@@ -335,7 +338,7 @@ int main(void)
 	config_extint_chan.gpio_pin_mux        = PINMUX_PA06A_EIC_EXTINT6;
 	config_extint_chan.gpio_pin_pull       = EXTINT_PULL_UP;
 	config_extint_chan.filter_input_signal = true;
-	config_extint_chan.detection_criteria  = EXTINT_DETECT_FALLING;
+	config_extint_chan.detection_criteria  = EXTINT_DETECT_FALLING | EXTINT_DETECT_RISING;
 	extint_chan_set_config(6, &config_extint_chan);
 	extint_register_callback(button3_handler, 6, EXTINT_CALLBACK_TYPE_DETECT);
 	extint_chan_enable_callback(6,EXTINT_CALLBACK_TYPE_DETECT);
@@ -424,51 +427,85 @@ int main(void)
 
 	
 	while(1){
-		if(button1){
-			button1 = false;
-			led_clock += 512;
-			//if(main_b_kbd_enable) send_keys(1);
-			send_keys(1);
+		if(button3_held){
+			if(!button3){
+				button3_held = false;
+				
+				if(!button3_combo){
+					led_clock += 512;
+					send_keys(3); //release with no combo is mute
+				}
+			}
+
+			if(button1){
+				button1 = false;
+				led_clock += 512;
+				send_keys(5);
+				button3_combo = true;
+			}
+			if(button2){
+				button2 = false;
+				led_clock += 512;
+				send_keys(6);
+				button3_combo = true;
+			}
+			if(button4){
+				button4 = false;
+				led_clock += 512;
+				send_keys(5);
+				button3_combo = true;
+			}
+			
+			led_set_brightness(LED1B, 255);
+			led_set_brightness(LED1R, 0);
+			led_set_brightness(LED2B, 0);
+			led_set_brightness(LED2R, 255);
+			led_set_brightness(LED4B, 255);
+			led_set_brightness(LED4R, 0);
+			led_set_brightness(LED3B, 128);
+			led_set_brightness(LED3R, 128);
+		} else {
+			if(button3){
+				button3_held = true;
+				button3_combo = false;
+							
+				led_clock += 512;
+			}
+			
+			if(button1){
+				button1 = false;
+				led_clock += 512;
+				send_keys(1);
+			}
+			if(button2){
+				button2 = false;
+				led_clock += 512;
+				send_keys(2);
+			}
+			if(button4){
+				button4 = false;
+				led_clock += 512;
+				send_keys(4);
+			}
+		
+			uint8_t i1 = clipped_sawtooth(led_clock);
+			uint8_t q1 = clipped_sawtooth(led_clock + 512);
+			uint8_t i2 = clipped_sawtooth(led_clock + 256);
+			uint8_t q2 = clipped_sawtooth(led_clock + 256 + 512);
+			uint8_t i3 = clipped_sawtooth(led_clock + 512);
+			uint8_t q3 = clipped_sawtooth(led_clock + 512 + 512);
+			uint8_t i4 = clipped_sawtooth(led_clock + 768);
+			uint8_t q4 = clipped_sawtooth(led_clock + 768 + 512);				
+		
+			led_set_brightness(LED1B, i4);
+			led_set_brightness(LED1R, q4);
+			led_set_brightness(LED2B, i3);
+			led_set_brightness(LED2R, q3);
+			led_set_brightness(LED4B, i2);
+			led_set_brightness(LED4R, q2);
+			led_set_brightness(LED3B, i1);
+			led_set_brightness(LED3R, q1);
 		}
-		if(button2){
-			button2 = false;
-			led_clock += 512;
-			//if(main_b_kbd_enable) send_keys(2);
-			send_keys(2);
-		}
-		if(button3){
-			button3 = false;
-			led_clock += 512;
-			//if(main_b_kbd_enable) send_keys(3);
-			send_keys(3);
-		}
-		if(button4){
-			button4 = false;
-			led_clock += 512;
-			//if(main_b_kbd_enable) send_keys(4);
-			send_keys(4);
-		}
-		
-		uint8_t i1 = clipped_sawtooth(led_clock);
-		uint8_t q1 = clipped_sawtooth(led_clock + 512);
-		
-		uint8_t i2 = clipped_sawtooth(led_clock + 256);
-		uint8_t q2 = clipped_sawtooth(led_clock + 256 + 512);
-		
-		uint8_t i3 = clipped_sawtooth(led_clock + 512);
-		uint8_t q3 = clipped_sawtooth(led_clock + 512 + 512);
-		
-		uint8_t i4 = clipped_sawtooth(led_clock + 768);
-		uint8_t q4 = clipped_sawtooth(led_clock + 768 + 512);				
-		
-		led_set_brightness(LED1B, i4);
-		led_set_brightness(LED1R, q4);
-		led_set_brightness(LED2B, i3);
-		led_set_brightness(LED2R, q3);
-		led_set_brightness(LED4B, i2);
-		led_set_brightness(LED4R, q2);
-		led_set_brightness(LED3B, i1);
-		led_set_brightness(LED3R, q1);
 		
 		play_sounds();
 	}
@@ -631,6 +668,11 @@ void button3_handler(void){
 		if((millis - lastButton3Press) > DEBOUNCE_TIME){
 			lastButton3Press = millis;
 			button3 = true;
+		}
+	} else {
+		if((millis - lastButton3Press) > DEBOUNCE_TIME/4){
+			lastButton3Press = millis;
+			button3 = false;		
 		}
 	}
 }
